@@ -40,5 +40,41 @@ router.post("./signup", async (req, res) => {
 
   res.json({ message: "User successfully created.", token: token });
 });
+const loginBody = z.object({
+  username: z.string().email(),
+  password: z.string(),
+});
+
+router.post("./login", async (req, res) => {
+  const { success } = loginBody.safeParse(req.body);
+  if (!success) {
+    return res
+      .status(411)
+      .json({ message: "Incorrect username or password type." });
+  }
+
+  const user = await User.findOne({
+    username: req.body.username,
+    password: req.body.password,
+  });
+
+  if (user) {
+    const token = jwt.sign(
+      {
+        userId: user._id,
+      },
+      JWT_SECRET
+    );
+
+    res.json({
+      token: token,
+    });
+    return;
+  }
+
+  res.status(411).json({
+    message: "Error while logging in",
+  });
+});
 
 module.exports = router;
